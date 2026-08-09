@@ -1,4 +1,6 @@
-# Multiline
+<img src="assets/dispatch-coin.png" alt="Dispatch logo" width="120">
+
+# Dispatch
 
 A self-hosted, single-user unified SMS/MMS inbox for people juggling multiple VoIP.ms DIDs (personal, business, whatever) who want one place to read and send texts instead of switching numbers in the VoIP.ms portal.
 

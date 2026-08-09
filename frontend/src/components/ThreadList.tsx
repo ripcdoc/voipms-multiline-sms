@@ -41,7 +41,7 @@ export function ThreadList() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img src="/dispatch-coin.png" alt="" className="h-[30px] w-[30px]" />
-            <div className="font-display text-sm font-extrabold tracking-wide text-white">MULTILINE</div>
+            <div className="font-display text-sm font-extrabold tracking-wide text-white">DISPATCH</div>
           </div>
           <div className="flex items-center gap-1.5">
             <button

@@ -45,11 +45,11 @@ export function Login() {
       <form onSubmit={onSubmit} className="relative flex w-[380px] flex-col items-center gap-4.5">
         <img
           src="/dispatch-coin.png"
-          alt="Multiline"
+          alt="Dispatch"
           className="h-[118px] w-[118px] drop-shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
         />
         <div className="text-center">
-          <div className="font-display text-2xl font-extrabold tracking-tight text-white">Multiline</div>
+          <div className="font-display text-2xl font-extrabold tracking-tight text-white">Dispatch</div>
           <div className="mt-2.5 font-mono text-xs tracking-wide text-navy-300">ONE INBOX · EVERY LINE</div>
         </div>
 

@@ -23,8 +23,8 @@ export default defineConfig({
       filename: "sw.ts",
       registerType: "autoUpdate",
       manifest: {
-        name: "Multiline",
-        short_name: "Multiline",
+        name: "Dispatch",
+        short_name: "Dispatch",
         description: "Self-hosted unified SMS/MMS client across multiple VoIP.ms DIDs",
         theme_color: "#0c1a33",
         background_color: "#0c1a33",
