@@ -1,0 +1,23 @@
+{
+  "name": "voipms-multiline-sms",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Self-hosted, single-user unified SMS/MMS inbox for multiple VoIP.ms DIDs",
+  "license": "MIT",
+  "author": "NoBull IT Solutions <150700342+ripcdoc@users.noreply.github.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ripcdoc/voipms-multiline-sms.git"
+  },
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

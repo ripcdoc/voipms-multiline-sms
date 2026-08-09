@@ -1,0 +1,121 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+/* Multiline — "telegraph dispatch" design tokens (navy/gold/bone/steel). */
+@theme {
+  --color-navy-950: #07101f;
+  --color-navy-900: #0c1a33;
+  --color-navy-800: #14233f;
+  --color-navy-700: #1d3052;
+  --color-navy-600: #2a416b;
+  --color-navy-500: #3d5887;
+  --color-navy-300: #8aa0c4;
+  --color-navy-100: #d6dfee;
+
+  --color-gold-700: #8c6c1f;
+  --color-gold-600: #a78535;
+  --color-gold-500: #c19848;
+  --color-gold-400: #d4ad60;
+  --color-gold-300: #e3c685;
+  --color-gold-200: #f0dcb1;
+  --color-gold-100: #f8edd5;
+
+  --color-bone-50: #fbf8f1;
+  --color-bone-100: #f4ede0;
+  --color-bone-200: #e8dcc4;
+  --color-bone-300: #d3c19c;
+
+  --color-steel-700: #4a5260;
+  --color-steel-500: #7e8693;
+  --color-steel-300: #b9bec7;
+  --color-steel-100: #e3e6ec;
+
+  /* Only these two shades of each are used app-wide — keep to -600/-100 when
+     styling status states so everything stays on the muted brand palette
+     instead of drifting back to Tailwind's default (more saturated) scale. */
+  --color-green-600: #2f7a4a;
+  --color-green-100: #dff0e3;
+  --color-red-600: #b3321f;
+  --color-red-100: #fadcd5;
+  --color-amber-600: #b07914;
+
+  /* Semantic on-light text/border roles — used on the bone content pane
+     (Thread, Settings), as distinct from the raw navy/gold scale used
+     directly on dark surfaces (nav rail, login, modals). */
+  --color-fg-1: var(--color-navy-900);
+  --color-fg-2: var(--color-navy-700);
+  --color-fg-3: #4a5872;
+  --color-fg-4: #6c7a92;
+  /* Named "hairline" not "border" — Tailwind's border-color utilities are
+     already `border-{name}`, and `--color-border-1` would generate the
+     redundant `border-border-1`. */
+  --color-hairline-1: rgba(20, 35, 63, 0.1);
+  --color-hairline-2: rgba(20, 35, 63, 0.18);
+
+  --font-display: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-1: 0 1px 2px rgba(12, 26, 51, 0.06), 0 1px 1px rgba(12, 26, 51, 0.04);
+  --shadow-2: 0 4px 10px rgba(12, 26, 51, 0.08), 0 1px 2px rgba(12, 26, 51, 0.05);
+  --shadow-3: 0 10px 28px rgba(12, 26, 51, 0.12), 0 2px 4px rgba(12, 26, 51, 0.06);
+  --shadow-4: 0 24px 60px rgba(12, 26, 51, 0.18), 0 4px 8px rgba(12, 26, 51, 0.08);
+  --shadow-gold: 0 10px 30px rgba(193, 152, 72, 0.35);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+/* Eyebrow — small uppercase tracked label above section titles. */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold-600);
+}
+.eyebrow--on-dark {
+  color: var(--color-gold-400);
+}
+
+/* Background motifs used on navy surfaces (login hero, nav rail). */
+.bg-dots-navy {
+  background-image: radial-gradient(circle at 1px 1px, rgba(193, 152, 72, 0.1) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+@keyframes pulse-gold {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.animate-pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+/* Notched "telegraph ticket" message bubble corner. */
+.bubble-notch-out {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+.bubble-notch-in {
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+}

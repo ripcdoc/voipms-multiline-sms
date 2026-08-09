@@ -1,0 +1,35 @@
+{
+  "name": "backend",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "NoBull IT Solutions <150700342+ripcdoc@users.noreply.github.com>",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --legacy-watch --watch src --ext ts --exec tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/multipart": "^9.0.3",
+    "@fastify/session": "^11.1.0",
+    "@fastify/static": "^10.1.2",
+    "@fastify/websocket": "^11.0.2",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "web-push": "^3.6.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^24.0.0",
+    "@types/web-push": "^3.6.4",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
