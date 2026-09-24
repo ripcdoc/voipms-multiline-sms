@@ -130,35 +130,39 @@ export async function registerApiRoutes(app: FastifyInstance): Promise<void> {
   // itself (it only takes raw bytes) - this stores the file and returns a
   // public URL under this same origin for sendMMS to use, same as if the
   // user had pasted a link to an already-hosted image.
-  app.post("/api/uploads", async (req, reply) => {
-    const file = await req.file();
-    if (!file) {
-      return reply.code(400).send({ error: "No file provided" });
-    }
-    if (!ALLOWED_UPLOAD_TYPES.has(file.mimetype)) {
-      return reply.code(400).send({ error: "Unsupported file type" });
-    }
+  app.post(
+    "/api/uploads",
+    { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
+    async (req, reply) => {
+      const file = await req.file();
+      if (!file) {
+        return reply.code(400).send({ error: "No file provided" });
+      }
+      if (!ALLOWED_UPLOAD_TYPES.has(file.mimetype)) {
+        return reply.code(400).send({ error: "Unsupported file type" });
+      }
 
-    const filename = `${randomUUID()}${extname(file.filename) || ""}`;
-    const uploadsDir = resolve(config.UPLOADS_DIR);
-    const destPath = join(uploadsDir, filename);
+      const filename = `${randomUUID()}${extname(file.filename) || ""}`;
+      const uploadsDir = resolve(config.UPLOADS_DIR);
+      const destPath = join(uploadsDir, filename);
 
-    try {
-      await pipeline(file.file, createWriteStream(destPath));
-    } catch (err) {
-      req.log.error(err, "Failed to save upload");
-      return reply.code(500).send({ error: "Failed to save upload" });
-    }
-    // @fastify/multipart aborts the stream (rather than erroring the promise)
-    // when a file exceeds the configured size limit - check for that after
-    // the fact and clean up the partial write.
-    if (file.file.truncated) {
-      return reply.code(413).send({ error: "File too large" });
-    }
+      try {
+        await pipeline(file.file, createWriteStream(destPath));
+      } catch (err) {
+        req.log.error(err, "Failed to save upload");
+        return reply.code(500).send({ error: "Failed to save upload" });
+      }
+      // @fastify/multipart aborts the stream (rather than erroring the promise)
+      // when a file exceeds the configured size limit - check for that after
+      // the fact and clean up the partial write.
+      if (file.file.truncated) {
+        return reply.code(413).send({ error: "File too large" });
+      }
 
-    const url = `${req.protocol}://${req.hostname}/uploads/${filename}`;
-    return { url };
-  });
+      const url = `${req.protocol}://${req.hostname}/uploads/${filename}`;
+      return { url };
+    },
+  );
 
   app.delete<{ Params: { id: string } }>("/api/messages/:id", async (req, reply) => {
     const messageId = Number(req.params.id);

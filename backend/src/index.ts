@@ -3,6 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
 import staticFiles from "@fastify/static";
 import websocket from "@fastify/websocket";
 import Fastify from "fastify";
@@ -26,6 +27,11 @@ await app.register(websocket);
 // 15MB cap - comfortably above what VoIP.ms's MMS carriers will actually
 // deliver/accept, without letting an upload run unbounded.
 await app.register(multipart, { limits: { fileSize: 15 * 1024 * 1024, files: 1 } });
+// Single-user app, but every route still sits behind a public reverse proxy -
+// a global cap stops any one route (uploads writing to disk, VoIP.ms API
+// calls) from being hammered into a DoS. Per-route overrides below tighten
+// this further for the expensive ones.
+await app.register(rateLimit, { global: true, max: 200, timeWindow: "1 minute" });
 
 app.get("/health", async () => ({ ok: true }));
 
