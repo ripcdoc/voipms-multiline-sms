@@ -24,7 +24,7 @@ import {
   type Did,
 } from "../db/queries.js";
 import { isPushConfigured } from "../push/index.js";
-import { deleteMms, deleteSms, getDidsInfo, sendMms, sendSms } from "../voipms/client.js";
+import { deleteMms, deleteSms, getDidsInfo, sendMms, sendSms, VoipMsError } from "../voipms/client.js";
 import { broadcast } from "../ws/index.js";
 
 const sendMessageSchema = z
@@ -98,6 +98,7 @@ export async function registerApiRoutes(app: FastifyInstance): Promise<void> {
 
     let voipmsMessageId: string | null = null;
     let status: "sent" | "failed" = "sent";
+    let errorDetail: string | null = null;
     try {
       if (mediaUrls && mediaUrls.length > 0) {
         const result = await sendMms({ did: did.did, dst: thread.contact_number, message: body, mediaUrls });
@@ -109,6 +110,10 @@ export async function registerApiRoutes(app: FastifyInstance): Promise<void> {
     } catch (err) {
       req.log.error(err, "Failed to send via VoIP.ms");
       status = "failed";
+      // VoipMsError.status is VoIP.ms's own error code (e.g. "invalid_dst",
+      // "insufficient_funds") - surface that instead of a generic message so
+      // a failed send is self-explanatory in the UI rather than a dead end.
+      errorDetail = err instanceof VoipMsError ? `${err.status}: ${err.message}` : "Network error contacting VoIP.ms";
     }
 
     const message = insertMessage({
@@ -118,6 +123,7 @@ export async function registerApiRoutes(app: FastifyInstance): Promise<void> {
       mediaUrls: mediaUrls ?? null,
       status,
       voipmsMessageId,
+      errorDetail,
     });
 
     broadcast("message:new", { threadId, message });

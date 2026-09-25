@@ -65,7 +65,9 @@ function MessageStatus({ message, threadId }: { message: Message; threadId: numb
       <div className="flex items-center gap-1.5 font-mono text-[10.5px] text-red-600">
         <span>{formatMessageTime(message.created_at)}</span>
         <span>·</span>
-        <span>Failed to send</span>
+        <span title={message.error_detail ?? undefined}>
+          {message.error_detail ? `Failed: ${message.error_detail}` : "Failed to send"}
+        </span>
         <button onClick={() => retry.mutate()} disabled={retry.isPending} className="underline">
           {retry.isPending ? "Retrying…" : "Retry"}
         </button>

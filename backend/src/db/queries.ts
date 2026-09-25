@@ -27,6 +27,7 @@ export interface Message {
   media_urls: string | null;
   status: string;
   voipms_message_id: string | null;
+  error_detail: string | null;
   created_at: string;
 }
 
@@ -166,11 +167,12 @@ export function insertMessage(params: {
   mediaUrls: string[] | null;
   status: string;
   voipmsMessageId: string | null;
+  errorDetail?: string | null;
 }): Message {
   const result = db
     .prepare(
-      `INSERT INTO messages (thread_id, direction, body, media_urls, status, voipms_message_id)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO messages (thread_id, direction, body, media_urls, status, voipms_message_id, error_detail)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       params.threadId,
@@ -178,7 +180,8 @@ export function insertMessage(params: {
       params.body,
       params.mediaUrls ? JSON.stringify(params.mediaUrls) : null,
       params.status,
-      params.voipmsMessageId
+      params.voipmsMessageId,
+      params.errorDetail ?? null
     );
   touchThread(params.threadId);
   return db.prepare("SELECT * FROM messages WHERE id = ?").get(result.lastInsertRowid) as unknown as Message;

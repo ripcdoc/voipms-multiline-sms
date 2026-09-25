@@ -56,6 +56,7 @@ export interface Message {
   media_urls: string | null;
   status: string;
   voipms_message_id: string | null;
+  error_detail: string | null;
   created_at: string;
 }
 

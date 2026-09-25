@@ -42,6 +42,7 @@ db.exec(`
     media_urls TEXT,
     status TEXT NOT NULL DEFAULT 'received',
     voipms_message_id TEXT,
+    error_detail TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -69,4 +70,9 @@ for (const column of ["last_read_at", "display_name"]) {
   if (!threadColumns.some((c) => c.name === column)) {
     db.exec(`ALTER TABLE threads ADD COLUMN ${column} TEXT`);
   }
+}
+
+const messageColumns = db.prepare("PRAGMA table_info(messages)").all() as unknown as { name: string }[];
+if (!messageColumns.some((c) => c.name === "error_detail")) {
+  db.exec("ALTER TABLE messages ADD COLUMN error_detail TEXT");
 }
