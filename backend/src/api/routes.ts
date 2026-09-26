@@ -10,6 +10,7 @@ import { db } from "../db/index.js";
 import {
   addPushSubscription,
   deleteMessage,
+  disableDidsNotIn,
   findDidByNumber,
   getMessage,
   getOrCreateThread,
@@ -61,6 +62,10 @@ export async function registerApiRoutes(app: FastifyInstance): Promise<void> {
         enabled: d.sms_available === 1,
       });
     }
+    // A DID VoIP.ms no longer lists (ported away, removed from the account)
+    // won't come back through the loop above - disable it explicitly so the
+    // reconciliation poll stops querying it every cycle.
+    disableDidsNotIn(dids.map((d) => d.did));
     return listDids();
   });
 

@@ -85,12 +85,21 @@ export async function registerSmsWebhook(app: FastifyInstance): Promise<void> {
         unreadCount: countUnreadThreads(),
       }).catch((err) => req.log.error(err, "Failed to send push notifications"));
 
-      // Fire-and-forget, same as push above. One-way notify only, and only
-      // for the single DID/extension pair configured (see config.ts).
-      if (config.AMI_NOTIFY_DID === didNumber) {
-        sendAmiMessage(`${thread.display_name || contactNumber}: ${message.body || "[MMS attachment]"}`).catch((err) =>
-          req.log.error(err, "Failed to send AMI desk-phone notification")
-        );
+      // Fire-and-forget, same as push above. One-way notify only, per the
+      // DID->extension pairs in AMI_NOTIFY_MAP - SMS only, never MMS (SIP
+      // MESSAGE is text-only, so there was never an image to deliver anyway).
+      // Each entry's did is a raw env var, not guaranteed to already be in
+      // the bare-10-digit form didNumber is normalized to - normalize it
+      // the same way before comparing, or a formatting difference (leading
+      // "1", "+", dashes, stray whitespace) silently never matches.
+      if (!message.media_urls) {
+        const notifyEntry = config.AMI_NOTIFY_MAP.find((entry) => normalizePhoneNumber(entry.did) === didNumber);
+        if (notifyEntry) {
+          req.log.info({ didNumber, extension: notifyEntry.extension }, "Sending AMI desk-phone notification");
+          sendAmiMessage(`${thread.display_name || contactNumber}: ${message.body || ""}`, notifyEntry.extension).catch(
+            (err) => req.log.error(err, "Failed to send AMI desk-phone notification")
+          );
+        }
       }
 
       return { ok: true };

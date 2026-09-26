@@ -10,6 +10,7 @@ Dispatch is a self-hosted, single-user unified SMS/MMS inbox for people juggling
 Not a multi-tenant SaaS — this is built for one person to run for themselves, behind whatever access control (VPN, reverse-proxy auth, etc.) they choose to put in front of it.
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-14233f)
+![Version](https://img.shields.io/badge/version-2.0.1-14233f)
 ![Backend](https://img.shields.io/badge/backend-Fastify%20%2B%20TypeScript-14233f)
 ![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-14233f)
 
@@ -17,9 +18,11 @@ Not a multi-tenant SaaS — this is built for one person to run for themselves, 
 
 ## Contents
 
+- [What's new in v2.0](#whats-new-in-v20)
 - [Features](#features)
 - [Stack](#stack)
 - [Setup](#setup)
+- [Desk-phone notify (optional)](#desk-phone-notify-optional)
 - [Run (dev)](#run-dev)
 - [Build](#build)
 - [Deploy](#deploy)
@@ -39,6 +42,13 @@ Not a multi-tenant SaaS — this is built for one person to run for themselves, 
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 
+## What's new in v2.0
+
+- **Desk-phone notify now supports multiple lines.** Map any number of DIDs to their own PBX extension (`AMI_NOTIFY_MAP=did:ext,did:ext,...`), each notified independently. **Breaking change** if you were using the old single-pair `AMI_NOTIFY_DID`/`AMI_NOTIFY_EXTENSION` vars from v1.x — see [Desk-phone notify](#desk-phone-notify-optional) below.
+- **Failed sends show the real reason.** A failed outgoing message now surfaces VoIP.ms's actual error (e.g. invalid destination, insufficient funds) instead of a generic "Failed to send."
+- **Rate limiting extended** beyond login to cover uploads and the API generally.
+- **Automatic cleanup** of DIDs that get removed or ported away from your VoIP.ms account, so the background reconciliation poll stops retrying a number you no longer own.
+
 ## Features
 
 - **Unified inbox** across every SMS/MMS-capable DID on your VoIP.ms account, synced automatically from your account (no manual DID entry).
@@ -47,8 +57,8 @@ Not a multi-tenant SaaS — this is built for one person to run for themselves, 
 - **Installable PWA** with Web Push notifications and an app-icon unread badge.
 - **Per-message delete** (local + best-effort delete on VoIP.ms's side).
 - **Reconciliation poll** that backfills messages sent from the VoIP.ms portal directly, or lost to a missed webhook delivery.
-- **Desk-phone notify (optional)** — notify a UCM-style PBX extension by SIP MESSAGE (via AMI) when a text arrives on a given line, if you also have a desk phone on it.
-- **Login rate limiting**, GSM-7/Unicode-aware segment counter on compose, responsive mobile layout.
+- **Desk-phone notify (optional)** — map any number of your lines to PBX extensions; an inbound SMS (never MMS) on a mapped DID pushes a one-way SIP MESSAGE to that extension via AMI. Not VoIP.ms-specific — works with any Asterisk-based PBX that exposes AMI. See [Desk-phone notify](#desk-phone-notify-optional).
+- **Rate limiting** on login, uploads, and the API generally; GSM-7/Unicode-aware segment counter on compose; responsive mobile layout.
 
 ## Stack
 
@@ -74,11 +84,31 @@ Then copy `backend/.env.example` to `backend/.env` and fill in:
 | `VOIPMS_API_USERNAME` / `VOIPMS_API_PASSWORD` | From the VoIP.ms portal (Account → API Control). |
 | `VOIPMS_WEBHOOK_SECRET` | Any random string; appended as a query param (`?secret=...`) on the callback URL you register in the VoIP.ms portal for inbound SMS/MMS. VoIP.ms's actual webhook body doesn't match their documented flat format — the secret is a query param, not a body field, and the real body shape is `{ data: { payload: {...} } }`. See `backend/src/webhooks/sms.ts` for details, and check your own server logs for a "Rejected inbound SMS webhook payload" warning if deliveries aren't showing up. |
 
-Everything else in `.env.example` (uploads, push, AMI desk-phone notify) is optional and disabled until configured.
+Everything else in `.env.example` (uploads, push) is optional and disabled until configured. See [Desk-phone notify](#desk-phone-notify-optional) below for the AMI variables.
 
 DIDs sync from VoIP.ms automatically: Settings page → "Sync lines", or `POST /api/dids/sync`. Start a new conversation from the "+" button in the thread list (picks a DID + contact number).
 
 > **DID labels come from the VoIP.ms "Note" field**, not "Description" — Description is VoIP.ms-assigned (e.g. a rate-center code) and can't be edited from the portal, but Note can. To control what a DID shows as in Dispatch, edit its Note under VoIP.ms portal → Main Menu → DID Numbers → Manage DIDs → (select DID). If Note is empty, the label falls back to Description, then to the bare DID number.
+
+## Desk-phone notify (optional)
+
+If you also have a physical desk phone on one or more of your lines, Dispatch can push a one-way SIP MESSAGE to a PBX extension whenever an SMS (never MMS — see below) arrives on a mapped DID. This is not a VoIP.ms feature — it talks directly to your PBX's Asterisk Manager Interface (AMI), so it works with any Asterisk-based PBX that exposes AMI and addresses extensions via PJSIP: a bare Asterisk install, FreePBX, Sangoma PBXact, AsteriskNOW, Issabel, VitalPBX, or a Grandstream UCM-series unit, among others.
+
+Set these in `.env` (all disabled until `AMI_HOST`/`AMI_USERNAME`/`AMI_PASSWORD` are set):
+
+```
+AMI_HOST=
+AMI_PORT=7777
+AMI_USERNAME=
+AMI_PASSWORD=
+AMI_NOTIFY_MAP=5551234567:400,5559876543:351
+```
+
+`AMI_NOTIFY_MAP` is one or more `did:extension` pairs, comma-separated — any number of lines, each ringing a different extension. Only SMS triggers a notification; MMS is intentionally excluded, since SIP MESSAGE is a text-only mechanism unrelated to carrier MMS, so there was never an image to actually deliver.
+
+**Known limitation on at least one PBX vendor:** whether this actually works depends entirely on your PBX's own AMI permission model. Asterisk's `MessageSend` action requires a `message` manager-user privilege class, and at least one Grandstream UCM63xx firmware doesn't expose that class anywhere in its AMI User configuration UI — every other privilege can be granted, but `MessageSend` still returns "Permission denied." If you hit that on your own PBX, it's very likely a vendor limitation, not a mistake in your `.env` — check your PBX vendor's own AMI documentation or support channel.
+
+Only use plaintext AMI if the path between Dispatch and your PBX is already secured some other way (a VPN, an isolated network) — never expose the AMI port directly to the internet.
 
 ## Run (dev)
 
@@ -271,6 +301,7 @@ You are returned to the sign-in screen. Sign out when using a shared or unattend
 - Confirm that the conversation is not hidden by a search filter.
 - Ask the administrator to verify the VoIP.ms callback URL and webhook secret.
 - The administrator can check the server log for rejected webhook payload warnings.
+- **Check which VoIP.ms field is configured.** Each DID's SMS/MMS settings page in the VoIP.ms portal has two separate, easily-confused fields: **"SMS/MMS URL Callback"** (labeled *GET Request*) and **"SMS/MMS Webhook URL"** (labeled *POST Request in a JSON Format*). Dispatch only understands the latter — if "URL Callback" is checked instead of "Webhook URL," messages will still show up eventually via the reconciliation poll (every 5 minutes) but real-time delivery, push notifications, and desk-phone notify will never fire. This is a per-DID setting; check it for every line.
 
 ### A line is missing or has the wrong label
 
@@ -298,4 +329,4 @@ MIT — see [LICENSE](./LICENSE).
 
 ---
 
-Dispatch version 0.1.0 · NoBull IT Solutions
+Dispatch version 2.0.1 · NoBull IT Solutions

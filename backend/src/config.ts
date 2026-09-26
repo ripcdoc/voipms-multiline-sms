@@ -21,19 +21,30 @@ const envSchema = z.object({
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().default("mailto:admin@example.com"),
-  // Optional, same pattern as VAPID above: a UCM-style PBX desk-phone
-  // notify feature is disabled until all of these are set. Plaintext AMI
-  // is only safe if the path to your PBX is already encrypted some other
-  // way (e.g. a VPN) - don't expose AMI directly to the internet.
-  // AMI_NOTIFY_DID/EXTENSION is a single DID->extension pair - inbound
-  // messages on that DID get pushed to that extension as a one-way SIP
-  // MESSAGE notification.
+  // Optional, same pattern as VAPID above: a UCM-style PBX desk-phone notify
+  // feature is disabled until AMI_HOST/USERNAME/PASSWORD are set. Plaintext
+  // AMI is only safe if the path to your PBX is already encrypted some
+  // other way (e.g. a VPN) - don't expose AMI directly to the internet.
+  // AMI_NOTIFY_MAP holds one or more DID->extension pairs
+  // ("did:ext,did:ext,...") - an inbound SMS on a mapped DID gets pushed to
+  // that extension as a one-way SIP MESSAGE notification. MMS is never
+  // forwarded this way (see webhooks/sms.ts) - SIP MESSAGE is a text-only
+  // mechanism, unrelated to carrier MMS, so there was never an image to
+  // actually deliver.
+  //
+  // Whether this works at all depends entirely on your PBX's own AMI
+  // permission model. Asterisk's MessageSend action requires a "message"
+  // manager-user privilege class; some PBX vendors' AMI user configuration
+  // UIs don't expose that class at all (confirmed on at least one
+  // Grandstream UCM63xx firmware, where every other privilege was grantable
+  // but MessageSend still returned "Permission denied") - check your PBX's
+  // own AMI documentation/support if this fails outright rather than
+  // assuming it's a config mistake here.
   AMI_HOST: z.string().optional(),
   AMI_PORT: z.coerce.number().default(7777),
   AMI_USERNAME: z.string().optional(),
   AMI_PASSWORD: z.string().optional(),
-  AMI_NOTIFY_DID: z.string().optional(),
-  AMI_NOTIFY_EXTENSION: z.string().optional(),
+  AMI_NOTIFY_MAP: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -46,4 +57,21 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const config = parsed.data;
+// Raw (un-normalized) did:extension pairs - normalized at lookup time in
+// webhooks/sms.ts, which already imports normalizePhoneNumber for this
+// exact purpose and would otherwise create a circular import with client.ts.
+function parseAmiNotifyMap(raw: string | undefined): { did: string; extension: string }[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((pair) => {
+      const [did, extension] = pair.split(":").map((s) => s.trim());
+      return { did, extension };
+    })
+    .filter((entry): entry is { did: string; extension: string } => Boolean(entry.did && entry.extension));
+}
+
+export const config = {
+  ...parsed.data,
+  AMI_NOTIFY_MAP: parseAmiNotifyMap(parsed.data.AMI_NOTIFY_MAP),
+};

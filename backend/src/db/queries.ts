@@ -64,6 +64,19 @@ export function upsertDid(params: {
   return db.prepare("SELECT * FROM dids WHERE did = ?").get(params.did) as unknown as Did;
 }
 
+// A DID ported away or removed from the VoIP.ms account still sits in this
+// table (enabled=1) forever unless explicitly disabled - left enabled, the
+// reconciliation poll keeps querying it every cycle and VoIP.ms just errors
+// (invalid_did) instead of ever coming back healthy on its own.
+export function disableDidsNotIn(currentDids: string[]): void {
+  if (currentDids.length === 0) {
+    db.prepare("UPDATE dids SET enabled = 0").run();
+    return;
+  }
+  const placeholders = currentDids.map(() => "?").join(", ");
+  db.prepare(`UPDATE dids SET enabled = 0 WHERE did NOT IN (${placeholders})`).run(...currentDids);
+}
+
 export function getOrCreateThread(didId: number, contactNumber: string): Thread {
   const existing = db
     .prepare("SELECT * FROM threads WHERE did_id = ? AND contact_number = ?")

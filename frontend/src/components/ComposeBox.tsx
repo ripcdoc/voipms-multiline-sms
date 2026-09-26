@@ -30,6 +30,7 @@ export function ComposeBox({ threadId }: { threadId: number }) {
         media_urls: params.mediaUrls ? JSON.stringify(params.mediaUrls) : null,
         status: "sending",
         voipms_message_id: null,
+        error_detail: null,
         created_at: new Date().toISOString().replace("T", " ").slice(0, 19),
       };
       queryClient.setQueryData<Message[]>(["messages", threadId], (old) => [...(old ?? []), tempMessage]);
